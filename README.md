@@ -70,11 +70,100 @@ Retener clientes existentes resulta más económico que adquirir nuevos, por lo 
 
 ---
 
-## 📊 Resultados esperados
+## 📊 Resultados Obtenidos
 
-- Determinar el modelo con mejor desempeño predictivo.  
-- Identificar las variables que más influyen en la fuga de clientes.  
-- Proponer **estrategias de retención basadas en los hallazgos**.  
+### 🏆 Mejor Modelo: RandomForest
+| Métrica | Valor |
+|---------|-------|
+| **Accuracy** | **95.73%** |
+| **Precision** | **94.07%** |
+| **Recall** | **89.66%** |
+| **F1-Score** | **91.81%** |
+| **ROC-AUC** | **93.80%** |
+
+### 📈 Comparación de Modelos
+| Modelo | Accuracy | Precision | Recall | F1-Score | ROC-AUC |
+|--------|----------|-----------|--------|----------|---------|
+| RandomForest | **95.73%** | **94.07%** | **89.66%** | **91.81%** | **93.80%** |
+| XGBoost | 91.22% | 85.60% | 80.67% | 83.06% | 87.86% |
+| LogisticRegression | 80.32% | 65.74% | 54.89% | 59.83% | 72.24% |
+
+### ✅ Objetivos Alcanzados
+- ✅ **Accuracy ≥ 80%**: RandomForest alcanzó 95.73%
+- ✅ **Recall ≥ 70%**: RandomForest alcanzó 89.66%
+- ✅ **ROC-AUC ≥ 0.85**: RandomForest alcanzó 0.938
+
+---
+
+## 🚀 API FastAPI
+
+El proyecto incluye una **API REST** para realizar predicciones en tiempo real.
+
+### 📡 Endpoints Disponibles
+
+#### 1. Health Check
+```http
+GET /health
+```
+**Respuesta:**
+```json
+{
+  "status": "ok"
+}
+```
+
+#### 2. Predicción de Churn
+```http
+POST /predict
+Content-Type: application/json
+```
+**Ejemplo de request:**
+```json
+[
+  {
+    "gender": "Female",
+    "SeniorCitizen": 0,
+    "Partner": "Yes",
+    "Dependents": "No",
+    "tenure": 1,
+    "PhoneService": "No",
+    "MultipleLines": "No phone service",
+    "InternetService": "DSL",
+    "OnlineSecurity": "No",
+    "OnlineBackup": "Yes",
+    "DeviceProtection": "No",
+    "TechSupport": "No",
+    "StreamingTV": "No",
+    "StreamingMovies": "No",
+    "Contract": "Month-to-month",
+    "PaperlessBilling": "Yes",
+    "PaymentMethod": "Electronic check",
+    "MonthlyCharges": 29.85,
+    "TotalCharges": 29.85
+  }
+]
+```
+
+**Respuesta:**
+```json
+{
+  "predictions": ["Yes"],
+  "probabilities": [0.6235961317624209]
+}
+```
+
+### 🔧 Ejecutar la API
+
+```bash
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Ejecutar API
+uvicorn src.api.app:app --host 127.0.0.1 --port 8000
+
+# Acceder a documentación interactiva
+# http://127.0.0.1:8000/docs
+```
 
 ---
 
@@ -82,5 +171,5 @@ Retener clientes existentes resulta más económico que adquirir nuevos, por lo 
 
 ### 1. Clonar repositorio
 ```bash
-git clone https://github.com/DanAhuis/TrabajoFinal-DS.git
-cd TrabajoFinal-DS
+git clone https://github.com/DanAhuis/TrabajoFinal_DS.git
+cd TrabajoFinal_DS

@@ -72,7 +72,12 @@ def main():
     logging.info("=== INICIANDO EVALUACIÓN DE MODELOS ===")
 
     # Cargar datos procesados
-    df = pd.read_parquet(DATA_PATH)
+    try:
+        df = pd.read_parquet(DATA_PATH)
+    except Exception:
+        # Fallback a CSV si parquet no está disponible
+        csv_path = os.path.splitext(DATA_PATH)[0] + ".csv"
+        df = pd.read_csv(csv_path)
     X = df.drop("Churn", axis=1)
     y = df["Churn"]
 
