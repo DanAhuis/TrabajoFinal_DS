@@ -1,1 +1,5 @@
 __pycache__/
+data/processed/
+logs/
+src/models/
+src/data/
