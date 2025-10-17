@@ -33,9 +33,12 @@ nuevo_cliente_transf = preprocessor.transform(nuevo_cliente)
 # Convertir a DataFrame con nombres de columnas (si están disponibles)
 try:
     feature_names = preprocessor.get_feature_names_out()
-    nuevo_cliente_transf = pd.DataFrame(nuevo_cliente_transf, columns=feature_names)
-except:
-    pass  # Si no se puede, no pasa nada
+    nuevo_cliente_transf = pd.DataFrame(
+        nuevo_cliente_transf, columns=feature_names
+    )
+except Exception:
+    # Si no se puede obtener nombres de features, continuar sin cambiar
+    pass
 
 # Predicción
 pred = model.predict(nuevo_cliente_transf)

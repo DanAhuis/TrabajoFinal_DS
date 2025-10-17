@@ -6,16 +6,31 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    roc_auc_score, confusion_matrix, classification_report, RocCurveDisplay
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    confusion_matrix,
+    classification_report,
+    RocCurveDisplay,
 )
 
 # === CONFIGURACIÓN ===
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "telco_prepared.parquet")
-MODELS_PATH = os.path.join(BASE_DIR, "src", "models")
+BASE_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..")
+)
+DATA_PATH = os.path.join(
+    BASE_DIR, "data", "processed", "telco_prepared.parquet"
+)
+MODELS_PATH = os.path.join(
+    BASE_DIR, "src", "models"
+)
+
 
 def evaluate_model(model, X_test, y_test, model_name):
     """Evalúa un modelo y muestra métricas y gráficos."""
@@ -40,7 +55,7 @@ def evaluate_model(model, X_test, y_test, model_name):
     logging.info("\n" + classification_report(y_test, y_pred))
 
     # Matriz de confusión
-    plt.figure(figsize=(5,4))
+    plt.figure(figsize=(5, 4))
     sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, fmt='d', cmap='Blues')
     plt.title(f'Matriz de Confusión - {model_name}')
     plt.xlabel('Predicho')
@@ -51,6 +66,7 @@ def evaluate_model(model, X_test, y_test, model_name):
     RocCurveDisplay.from_estimator(model, X_test, y_test)
     plt.title(f'Curva ROC - {model_name}')
     plt.show()
+
 
 def main():
     logging.info("=== INICIANDO EVALUACIÓN DE MODELOS ===")
@@ -64,7 +80,7 @@ def main():
     modelos = {
         "LogisticRegression": "LogisticRegression.pkl",
         "RandomForest": "RandomForest.pkl",
-        "XGBoost": "XGBoost.pkl"
+        "XGBoost": "XGBoost.pkl",
     }
 
     for nombre, archivo in modelos.items():
@@ -77,6 +93,7 @@ def main():
             logging.warning(f"No se encontró el modelo: {archivo}")
 
     logging.info("=== EVALUACIÓN FINALIZADA ===")
+
 
 if __name__ == "__main__":
     main()
