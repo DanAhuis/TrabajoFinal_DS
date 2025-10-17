@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def load_and_clean_data(filepath: str) -> pd.DataFrame:
     """
     Carga y limpia el dataset Telco Customer Churn.

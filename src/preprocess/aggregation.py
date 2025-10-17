@@ -8,6 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def summarize_data(df: pd.DataFrame) -> None:
     """
     Muestra un resumen del dataset:
@@ -20,7 +21,10 @@ def summarize_data(df: pd.DataFrame) -> None:
         logger.info(f"Filas: {df.shape[0]} | Columnas: {df.shape[1]}")
         logger.info("\nTipos de datos:\n" + str(df.dtypes))
         logger.info("\nValores nulos por columna:\n" + str(df.isnull().sum()))
-        logger.info("\nEstadísticas descriptivas:\n" + str(df.describe(include='all').transpose()))
+        logger.info(
+            "\nEstadísticas descriptivas:\n" +
+            str(df.describe(include="all").transpose())
+        )
     except Exception as e:
         logger.error(f"Error generando resumen: {e}")
         raise
