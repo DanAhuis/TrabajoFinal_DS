@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from typing import List, Any, Dict
 import joblib
 import pandas as pd
+import numpy as np
 import os
 import logging
 
@@ -15,12 +15,9 @@ PREPROC_PATH = os.path.join("src", "models", "preprocessor.pkl")
 app = FastAPI(title="Telco Churn API")
 
 
-class Payload(BaseModel):
-    __root__: List[Dict[str, Any]]
-
-
 @app.on_event("startup")
 def load_artifacts():
+    """Carga el modelo y el preprocesador al arrancar la app."""
     global model, preprocessor
     try:
         model = joblib.load(MODEL_PATH)
@@ -49,11 +46,15 @@ def _ensure_columns(df: pd.DataFrame, expected_columns: List[str]):
 
 
 @app.post("/predict")
-def predict(payload: Payload):
+def predict(payload: List[Dict[str, Any]]):
+    """Espera una lista de registros JSON: [{col: val, ...}, ...]
+
+    Acepta tanto Pydantic v1 como v2 ya que no se depende de RootModel.
+    """
     if model is None or preprocessor is None:
         raise HTTPException(status_code=500, detail="Model or preprocessor not available")
 
-    data = payload.__root__
+    data = payload
     if not isinstance(data, list) or len(data) == 0:
         raise HTTPException(status_code=400, detail="Payload must be a non-empty list of records")
 
@@ -64,19 +65,78 @@ def predict(payload: Payload):
         try:
             expected = list(preprocessor.feature_names_in_)
         except Exception:
-            # Fallback: try to infer from training data in data/processed if available
+            # Fallback: try to infer from provided data
             expected = list(df.columns)
 
         df = _ensure_columns(df, expected)
 
         X = preprocessor.transform(df)
 
-        if hasattr(model, "predict_proba"):
-            probs = model.predict_proba(X)[:, 1].tolist()
-        else:
-            probs = [None] * X.shape[0]
+        # If the transformer returns a numpy array, try to recover feature names
+        X_for_model = X
+        feature_names = None
+        try:
+            # sklearn compatible: prefer passing input feature names when supported
+            if hasattr(preprocessor, "get_feature_names_out"):
+                try:
+                    feature_names = list(preprocessor.get_feature_names_out(df.columns))
+                except Exception:
+                    # fallback to no-arg get_feature_names_out
+                    try:
+                        feature_names = list(preprocessor.get_feature_names_out())
+                    except Exception:
+                        feature_names = None
+        except Exception:
+            feature_names = None
 
-        preds = model.predict(X).tolist()
+        if feature_names is None:
+            # fallback to attribute possibly set during preprocessing
+            try:
+                feature_names = list(preprocessor.feature_names_in_)
+            except Exception:
+                feature_names = None
+
+        # If we have an ndarray and feature names, convert to DataFrame so sklearn model sees proper names
+        if isinstance(X, (np.ndarray,)) and feature_names is not None:
+            try:
+                if X.ndim == 2 and len(feature_names) == X.shape[1]:
+                    X_for_model = pd.DataFrame(X, columns=feature_names)
+                else:
+                    # shape mismatch -> do not convert
+                    X_for_model = X
+            except Exception:
+                X_for_model = X
+
+        # As a final fallback, if the sklearn model stored feature_names_in_, use it (only if lengths match)
+        if isinstance(X_for_model, (np.ndarray,)):
+            try:
+                if hasattr(model, "feature_names_in_"):
+                    feat = list(model.feature_names_in_)
+                    if X_for_model.ndim == 2 and len(feat) == X_for_model.shape[1]:
+                        X_for_model = pd.DataFrame(X_for_model, columns=feat)
+            except Exception:
+                pass
+
+        # Ensure the DataFrame passed to the model has exactly the same columns as the model (order + names).
+        # If model exposes feature_names_in_, reindex/align the DataFrame to that index (fill missing with 0).
+        try:
+            if hasattr(model, "feature_names_in_") and isinstance(X_for_model, pd.DataFrame):
+                model_feats = list(model.feature_names_in_)
+                # Reindex will add missing columns filled with 0 and drop unexpected ones
+                X_for_model = X_for_model.reindex(columns=model_feats, fill_value=0)
+        except Exception:
+            pass
+
+        if hasattr(model, "predict_proba"):
+            probs = model.predict_proba(X_for_model)[:, 1].tolist()
+        else:
+            # handle numpy arrays or DataFrames
+            if hasattr(X_for_model, "shape"):
+                probs = [None] * X_for_model.shape[0]
+            else:
+                probs = []
+
+        preds = model.predict(X_for_model).tolist()
         # Map 1/0 to Yes/No if applicable
         mapped = ["Yes" if p == 1 or p == "1" else "No" for p in preds]
 

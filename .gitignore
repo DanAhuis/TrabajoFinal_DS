@@ -3,3 +3,6 @@ data/processed/
 logs/
 src/models/
 src/data/
+uvicorn.out.log
+uvicorn.err.log
+*.log
