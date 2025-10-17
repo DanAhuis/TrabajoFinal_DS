@@ -1,6 +1,8 @@
 import pytest
-from fastapi.testclient import TestClient
 import os
+
+pytest.importorskip("fastapi")
+from fastapi.testclient import TestClient
 
 from src.api.app import app
 
