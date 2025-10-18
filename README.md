@@ -117,6 +117,54 @@ GET /health
 POST /predict
 Content-Type: application/json
 ```
+
+#### 3. Entrenamiento de Modelos
+```http
+POST /train
+```
+**Respuesta:**
+```json
+{
+  "status": "success",
+  "message": "Modelos entrenados exitosamente",
+  "duration_seconds": 4.05,
+  "output": "...",
+  "models_available": [
+    "LogisticRegression.pkl",
+    "RandomForest.pkl", 
+    "XGBoost.pkl"
+  ]
+}
+```
+
+#### 4. Listar Modelos Disponibles
+```http
+GET /models
+```
+**Respuesta:**
+```json
+{
+  "models": {
+    "LogisticRegression.pkl": {
+      "available": true,
+      "size_bytes": 2751,
+      "last_modified": "2025-10-17T18:30:00"
+    },
+    "RandomForest.pkl": {
+      "available": true,
+      "size_bytes": 37030297,
+      "last_modified": "2025-10-17T18:30:00"
+    }
+  },
+  "preprocessor": {
+    "available": true,
+    "size_bytes": 6690,
+    "last_modified": "2025-10-17T18:30:00"
+  },
+  "metrics_available": true,
+  "current_model": "LogisticRegression.pkl"
+}
+```
 **Ejemplo de request:**
 ```json
 [
