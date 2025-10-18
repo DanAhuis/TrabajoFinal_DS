@@ -11,9 +11,12 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# Obtener el directorio base del proyecto
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 MODEL_NAME = os.environ.get("MODEL_NAME", "LogisticRegression.pkl")
-MODEL_PATH = os.path.join("src", "models", MODEL_NAME)
-PREPROC_PATH = os.path.join("src", "models", "preprocessor.pkl")
+MODEL_PATH = os.path.join(BASE_DIR, "src", "models", MODEL_NAME)
+PREPROC_PATH = os.path.join(BASE_DIR, "src", "models", "preprocessor.pkl")
 
 app = FastAPI(title="Telco Churn API")
 
@@ -224,7 +227,7 @@ def train_models():
 def list_models():
     """Lista los modelos disponibles y sus métricas."""
     try:
-        models_dir = os.path.join("src", "models")
+        models_dir = os.path.join(BASE_DIR, "src", "models")
         models_info = {}
         
         # Verificar qué modelos están disponibles
@@ -250,7 +253,7 @@ def list_models():
         }
         
         # Intentar leer métricas si están disponibles
-        metrics_path = os.path.join("src", "data", "results", "metrics.csv")
+        metrics_path = os.path.join(BASE_DIR, "src", "data", "results", "metrics.csv")
         metrics_available = False
         if os.path.exists(metrics_path):
             try:
