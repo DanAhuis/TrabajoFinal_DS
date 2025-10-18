@@ -5,6 +5,9 @@ import pandas as pd
 import numpy as np
 import os
 import logging
+import subprocess
+import sys
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -164,4 +167,105 @@ def predict(payload: List[Dict[str, Any]]):
 
     except Exception as e:
         logger.exception("Error during prediction")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/train")
+def train_models():
+    """Entrena todos los modelos y actualiza los archivos .pkl.
+    
+    Ejecuta el pipeline de entrenamiento completo.
+    """
+    try:
+        logger.info("Iniciando entrenamiento de modelos...")
+        start_time = datetime.now()
+        
+        # Ejecutar el script de entrenamiento
+        result = subprocess.run(
+            [sys.executable, "-m", "src.pipeline.training"],
+            capture_output=True,
+            text=True,
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
+        
+        end_time = datetime.now()
+        duration = (end_time - start_time).total_seconds()
+        
+        if result.returncode != 0:
+            logger.error(f"Error en entrenamiento: {result.stderr}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error durante el entrenamiento: {result.stderr}"
+            )
+        
+        # Recargar los modelos después del entrenamiento
+        load_artifacts()
+        
+        logger.info(f"Entrenamiento completado en {duration:.2f} segundos")
+        
+        return {
+            "status": "success",
+            "message": "Modelos entrenados exitosamente",
+            "duration_seconds": duration,
+            "output": result.stdout,
+            "models_available": [
+                "LogisticRegression.pkl",
+                "RandomForest.pkl", 
+                "XGBoost.pkl"
+            ]
+        }
+        
+    except Exception as e:
+        logger.exception("Error durante el entrenamiento")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/models")
+def list_models():
+    """Lista los modelos disponibles y sus métricas."""
+    try:
+        models_dir = os.path.join("src", "models")
+        models_info = {}
+        
+        # Verificar qué modelos están disponibles
+        for model_file in ["LogisticRegression.pkl", "RandomForest.pkl", "XGBoost.pkl"]:
+            model_path = os.path.join(models_dir, model_file)
+            if os.path.exists(model_path):
+                # Obtener información del archivo
+                stat = os.stat(model_path)
+                models_info[model_file] = {
+                    "available": True,
+                    "size_bytes": stat.st_size,
+                    "last_modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
+                }
+            else:
+                models_info[model_file] = {"available": False}
+        
+        # Verificar preprocesador
+        preproc_path = os.path.join(models_dir, "preprocessor.pkl")
+        preprocessor_info = {
+            "available": os.path.exists(preproc_path),
+            "size_bytes": os.stat(preproc_path).st_size if os.path.exists(preproc_path) else 0,
+            "last_modified": datetime.fromtimestamp(os.stat(preproc_path).st_mtime).isoformat() if os.path.exists(preproc_path) else None
+        }
+        
+        # Intentar leer métricas si están disponibles
+        metrics_path = os.path.join("src", "data", "results", "metrics.csv")
+        metrics_available = False
+        if os.path.exists(metrics_path):
+            try:
+                metrics_df = pd.read_csv(metrics_path)
+                metrics_available = True
+            except Exception:
+                pass
+        
+        return {
+            "models": models_info,
+            "preprocessor": preprocessor_info,
+            "metrics_available": metrics_available,
+            "current_model": MODEL_NAME
+        }
+        
+    except Exception as e:
+        logger.exception("Error obteniendo información de modelos")
         raise HTTPException(status_code=500, detail=str(e))
